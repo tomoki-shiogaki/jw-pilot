@@ -162,8 +162,6 @@ public class BatchConfiguration {
 	 * DBのレコードを加工するためのサンプルコード（DB ⇒ (加工) ⇒ DB）
 	 *
 	 * 「並行ステップ」を利用して加工処理を並列化。
-	 * ただし、CSVファイルの読み込みを行うクラス「FlatFileItemReader」がスレッドセーフではないためデータの入力（ItemReader）は同期させている。
-	 * そのため、並列化の効果が期待できるのはデータの加工（ItemProcessor）と出力（ItemWriter）のみ。
 	 *
 	 * 　　<参考サイト>
 	 *
