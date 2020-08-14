@@ -13,6 +13,9 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.job.builder.FlowBuilder;
+import org.springframework.batch.core.job.flow.Flow;
+import org.springframework.batch.core.job.flow.support.SimpleFlow;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.file.FlatFileHeaderCallback;
 import org.springframework.batch.item.file.FlatFileItemReader;
@@ -78,7 +81,7 @@ public class BatchConfiguration {
 			.incrementer(new RunIdIncrementer())
 			.listener(listener)
 			.flow(step01_CSV_to_DB())
-			.next(step02_DB_to_DB())
+			.next(flow02_DB_to_DB())
 			.next(step03_DB_to_CSV())
 			.end()
 			.build();
@@ -98,23 +101,44 @@ public class BatchConfiguration {
 	}
 
 	@Bean
-	public Step step02_DB_to_DB() {
-		SynchronizedItemStreamReader<Person> synchronizedReader = new SynchronizedItemStreamReader<>();
-		synchronizedReader.setDelegate(new MyBatisCursorItemReaderBuilder<Person>()
-                .sqlSessionFactory(sqlSessionFactory)
-                .queryId("com.example.batchprocessing.PersonMapper.findPersonByName")
-                .parameterValues(new HashMap<String, Object>() {{put("name", "Jo");}})
-                .build());
+	public Flow flow02_DB_to_DB() {
+	    return new FlowBuilder<SimpleFlow>("splitFlow02_DB_to_DB")
+	            .split(taskExecutor())
+	            .add(new FlowBuilder<SimpleFlow>("flow02_DB_to_DB_01").start(step02_DB_to_DB_01()).build(), new FlowBuilder<SimpleFlow>("flow02_DB_to_DB_02").start(step02_DB_to_DB_02()).build())
+	            .build();
+	}
 
-		return stepBuilderFactory.get("step02_DB_to_DB")
-			.<Person, Person> chunk(2)
-			.reader(synchronizedReader)
+	@Bean
+	public Step step02_DB_to_DB_01() {
+		return stepBuilderFactory.get("step02_DB_to_DB_01")
+			.<Person, Person> chunk(3)
+			.reader(new MyBatisCursorItemReaderBuilder<Person>()
+	                .sqlSessionFactory(sqlSessionFactory)
+	                .queryId("com.example.batchprocessing.PersonMapper.findPersonByName")
+	                .parameterValues(new HashMap<String, Object>() {{put("name", "J");}})
+	                .build())
 			.processor(processor())
 			.writer(new MyBatisBatchItemWriterBuilder<Person>()
 	                .sqlSessionFactory(sqlSessionFactory)
 	                .statementId("com.example.batchprocessing.PersonMapper.savePerson")
 	                .build())
-			.taskExecutor(taskExecutor())
+			.build();
+	}
+
+	@Bean
+	public Step step02_DB_to_DB_02() {
+		return stepBuilderFactory.get("step02_DB_to_DB_02")
+			.<Person, Person> chunk(3)
+			.reader(new MyBatisCursorItemReaderBuilder<Person>()
+	                .sqlSessionFactory(sqlSessionFactory)
+	                .queryId("com.example.batchprocessing.PersonMapper.findPersonByName")
+	                .parameterValues(new HashMap<String, Object>() {{put("name", "Z");}})
+	                .build())
+			.processor(processor())
+			.writer(new MyBatisBatchItemWriterBuilder<Person>()
+	                .sqlSessionFactory(sqlSessionFactory)
+	                .statementId("com.example.batchprocessing.PersonMapper.savePerson")
+	                .build())
 			.build();
 	}
 
