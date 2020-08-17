@@ -10,6 +10,8 @@ public class PersonItemProcessor implements ItemProcessor<Person, Person> {
 
 	private static final Logger log = LoggerFactory.getLogger(PersonItemProcessor.class);
 
+	private static int hoge = 0;
+
 	@Override
 	public Person process(final Person person) throws Exception {
 		final String firstName = person.getFirstName().toUpperCase();
@@ -19,7 +21,16 @@ public class PersonItemProcessor implements ItemProcessor<Person, Person> {
 
 		log.info("Converting (" + person + ") into (" + transformedPerson + ")");
 
+		ppp();
+		if(hoge == 4) {
+			throw new Exception();
+		}
+
 		return transformedPerson;
+	}
+
+	synchronized void ppp() {
+		hoge++;
 	}
 
 }

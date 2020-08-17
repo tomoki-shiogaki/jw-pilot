@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.function.Function;
 
 import org.apache.ibatis.session.SqlSessionFactory;
+import org.mybatis.spring.batch.MyBatisBatchItemWriter;
+import org.mybatis.spring.batch.MyBatisCursorItemReader;
 import org.mybatis.spring.batch.builder.MyBatisBatchItemWriterBuilder;
 import org.mybatis.spring.batch.builder.MyBatisCursorItemReaderBuilder;
 import org.springframework.batch.core.Job;
@@ -59,7 +61,9 @@ public class BatchConfiguration {
 	 * @return
 	 */
 	@Bean
-	public Job importUserJob(JobCompletionNotificationListener listener) {
+	public Job importUserJob(
+			JobCompletionNotificationListener listener,
+			Flow flow02_DB_to_DB) {
 		return jobBuilderFactory.get("importUserJob")
 			.incrementer(new RunIdIncrementer())
 
@@ -72,7 +76,7 @@ public class BatchConfiguration {
 			.flow(step01_CSV_to_DB())
 
 			// ②DB⇒（変換処理）⇒DB
-			.next(flow02_DB_to_DB())
+			.next(flow02_DB_to_DB)
 
 			// ③DB⇒CSVエクスポート
 			.next(step03_DB_to_CSV())
@@ -179,7 +183,7 @@ public class BatchConfiguration {
 	 * @return
 	 */
 	@Bean
-	public Flow flow02_DB_to_DB() {
+	public Flow flow02_DB_to_DB(Step step02_DB_to_DB_01, Step step02_DB_to_DB_02) {
 	    return new FlowBuilder<SimpleFlow>("splitFlow02_DB_to_DB")
 	    		// 非同期用のTaskExecutorを設定
 	            .split(asyncTaskExecutor())
@@ -187,39 +191,93 @@ public class BatchConfiguration {
 	            // 並行して実行するステップを登録
 	            .add(
 	            		// 名前に"J"が含まれるレコードを処理対象とするステップ
-	            		new FlowBuilder<SimpleFlow>("flow02_DB_to_DB_01").start(step02_DB_to_DB("step02_DB_to_DB_01", "J")).build(),
+	            		new FlowBuilder<SimpleFlow>("flow02_DB_to_DB_01").start(step02_DB_to_DB_01).build(),
 
 	            		// 名前に"Z"が含まれるレコードを処理対象とするステップ
-	            		new FlowBuilder<SimpleFlow>("flow02_DB_to_DB_02").start(step02_DB_to_DB("step02_DB_to_DB_02", "Z")).build())
+	            		new FlowBuilder<SimpleFlow>("flow02_DB_to_DB_02").start(step02_DB_to_DB_02).build())
 
 	            .build();
 	}
 
 	@Bean
-	public Step step02_DB_to_DB(String stepName, String targetName) {
-		return stepBuilderFactory.get(stepName)
+	public MyBatisCursorItemReader<Person> myBatisCursorItemReader01() {
+		return new MyBatisCursorItemReaderBuilder<Person>()
+				.sqlSessionFactory(sqlSessionFactory)
+				.queryId("com.example.batchprocessing.mapper.PersonMapper.findPersonByName")
+				.parameterValues(new HashMap<String, Object>() {{put("name", "J");}})
+				.build();
+	}
+
+	@Bean
+	public MyBatisBatchItemWriter<Person> myBatisBatchItemWriter01() {
+		return new MyBatisBatchItemWriterBuilder<Person>()
+                .sqlSessionFactory(sqlSessionFactory)
+                .statementId("com.example.batchprocessing.mapper.PersonMapper.savePerson")
+                .build();
+	}
+
+	@Bean
+	public Step step02_DB_to_DB_01(MyBatisCursorItemReader<Person> myBatisCursorItemReader01, PersonItemProcessor personItemProcessor, MyBatisBatchItemWriter<Person> myBatisBatchItemWriter01) {
+		return stepBuilderFactory.get("step02_DB_to_DB_01")
 			// チャンクサイズの設定
 			.<Person, Person> chunk(3)
 
 			// データの入力（DB ⇒ DTO）
 			// DBのPersonテーブルの各レコードをDTO「Person」に変換
-			.reader(new MyBatisCursorItemReaderBuilder<Person>()
-	                .sqlSessionFactory(sqlSessionFactory)
-	                .queryId("com.example.batchprocessing.mapper.PersonMapper.findPersonByName")
-	                .parameterValues(new HashMap<String, Object>() {{put("name", targetName);}})
-	                .build())
+			.reader(myBatisCursorItemReader01)
 
 			// データの加工
 			// ここにビジネスロジックを記述
 			// （サンプルではPerson.firstNameを大文字に変換）
-			.processor(new PersonItemProcessor())
+			.processor(personItemProcessor)
 
 			// データの出力（DTO ⇒ DB）
 			// DTO「Person」をDBのPersonテーブルに書き込む
-			.writer(new MyBatisBatchItemWriterBuilder<Person>()
-	                .sqlSessionFactory(sqlSessionFactory)
-	                .statementId("com.example.batchprocessing.mapper.PersonMapper.savePerson")
-	                .build())
+			.writer(myBatisBatchItemWriter01)
+
+			.build();
+	}
+
+	@Bean
+	public MyBatisCursorItemReader<Person> myBatisCursorItemReader02() {
+		return new MyBatisCursorItemReaderBuilder<Person>()
+				.sqlSessionFactory(sqlSessionFactory)
+				.queryId("com.example.batchprocessing.mapper.PersonMapper.findPersonByName")
+				.parameterValues(new HashMap<String, Object>() {{put("name", "Z");}})
+				.build();
+	}
+
+	@Bean
+	public PersonItemProcessor personItemProcessor() {
+		return new PersonItemProcessor();
+	}
+
+	@Bean
+	public MyBatisBatchItemWriter<Person> myBatisBatchItemWriter02() {
+		return new MyBatisBatchItemWriterBuilder<Person>()
+                .sqlSessionFactory(sqlSessionFactory)
+                .statementId("com.example.batchprocessing.mapper.PersonMapper.savePerson")
+                .build();
+	}
+
+	@Bean
+	public Step step02_DB_to_DB_02(MyBatisCursorItemReader<Person> myBatisCursorItemReader02, PersonItemProcessor personItemProcessor, MyBatisBatchItemWriter<Person> myBatisBatchItemWriter02) {
+		return stepBuilderFactory.get("step02_DB_to_DB_02")
+			// チャンクサイズの設定
+			.<Person, Person> chunk(3)
+
+			// データの入力（DB ⇒ DTO）
+			// DBのPersonテーブルの各レコードをDTO「Person」に変換
+			.reader(myBatisCursorItemReader02)
+
+			// データの加工
+			// ここにビジネスロジックを記述
+			// （サンプルではPerson.firstNameを大文字に変換）
+			.processor(personItemProcessor)
+
+			// データの出力（DTO ⇒ DB）
+			// DTO「Person」をDBのPersonテーブルに書き込む
+			.writer(myBatisBatchItemWriter02)
 
 			.build();
 	}
