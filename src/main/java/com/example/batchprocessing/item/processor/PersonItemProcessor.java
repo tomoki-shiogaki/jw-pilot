@@ -1,8 +1,10 @@
-package com.example.batchprocessing;
+package com.example.batchprocessing.item.processor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.item.ItemProcessor;
+
+import com.example.batchprocessing.dto.Person;
 
 public class PersonItemProcessor implements ItemProcessor<Person, Person> {
 

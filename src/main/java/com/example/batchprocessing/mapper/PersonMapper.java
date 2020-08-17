@@ -1,8 +1,10 @@
-package com.example.batchprocessing;
+package com.example.batchprocessing.mapper;
 
 import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;
+
+import com.example.batchprocessing.dto.Person;
 
 @Mapper
 public interface PersonMapper {

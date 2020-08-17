@@ -3,9 +3,9 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.example.batchprocessing.PersonMapper">
+<mapper namespace="com.example.batchprocessing.mapper.PersonMapper">
 
-    <resultMap type="com.example.batchprocessing.Person" id="personResultMap">
+    <resultMap type="com.example.batchprocessing.dto.Person" id="personResultMap">
         <id property="firstName" column="first_name" />
         <id property="lastName" column="last_name" />
     </resultMap>

@@ -1,4 +1,4 @@
-package com.example.batchprocessing;
+package com.example.batchprocessing.config;
 
 import java.util.HashMap;
 import java.util.function.Function;
@@ -27,6 +27,10 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
+
+import com.example.batchprocessing.dto.Person;
+import com.example.batchprocessing.item.processor.PersonItemProcessor;
+import com.example.batchprocessing.listener.JobCompletionNotificationListener;
 
 @Configuration
 @EnableBatchProcessing
@@ -143,7 +147,7 @@ public class BatchConfiguration {
 			// （書き込みを行うクラス「MyBatisBatchItemWriter」はスレッドセーフのため同期は不要）
 			.writer(new MyBatisBatchItemWriterBuilder<Person>()
 	                .sqlSessionFactory(sqlSessionFactory)
-	                .statementId("com.example.batchprocessing.PersonMapper.insertPerson")
+	                .statementId("com.example.batchprocessing.mapper.PersonMapper.insertPerson")
 	                .build())
 
 			// 非同期用のTaskExecutorを設定（デフォルト：SyncTaskExecutor）
@@ -201,7 +205,7 @@ public class BatchConfiguration {
 			// DBのPersonテーブルの各レコードをDTO「Person」に変換
 			.reader(new MyBatisCursorItemReaderBuilder<Person>()
 	                .sqlSessionFactory(sqlSessionFactory)
-	                .queryId("com.example.batchprocessing.PersonMapper.findPersonByName")
+	                .queryId("com.example.batchprocessing.mapper.PersonMapper.findPersonByName")
 	                .parameterValues(new HashMap<String, Object>() {{put("name", targetName);}})
 	                .build())
 
@@ -214,7 +218,7 @@ public class BatchConfiguration {
 			// DTO「Person」をDBのPersonテーブルに書き込む
 			.writer(new MyBatisBatchItemWriterBuilder<Person>()
 	                .sqlSessionFactory(sqlSessionFactory)
-	                .statementId("com.example.batchprocessing.PersonMapper.savePerson")
+	                .statementId("com.example.batchprocessing.mapper.PersonMapper.savePerson")
 	                .build())
 
 			.build();
@@ -241,7 +245,7 @@ public class BatchConfiguration {
 			// DBのPersonテーブルの各レコードをDTO「Person」に変換
 			.reader(new MyBatisCursorItemReaderBuilder<Person>()
 	                .sqlSessionFactory(sqlSessionFactory)
-	                .queryId("com.example.batchprocessing.PersonMapper.findAllPerson")
+	                .queryId("com.example.batchprocessing.mapper.PersonMapper.findAllPerson")
 	                .build())
 
 			// データの加工（あれば）
