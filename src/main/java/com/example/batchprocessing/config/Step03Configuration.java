@@ -14,6 +14,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
 
 import com.example.batchprocessing.dto.Person;
+import com.example.batchprocessing.listener.CommonItemReadListener;
+import com.example.batchprocessing.listener.CommonItemWriteListener;
 
 @Configuration
 @EnableBatchProcessing
@@ -39,7 +41,9 @@ public class Step03Configuration {
 	@Bean
 	public Step step03_DB_to_CSV(
 			ItemReader<Person> step03ItemReader,
-			ItemWriter<Person> step03ItemWriter) {
+			ItemWriter<Person> step03ItemWriter,
+			CommonItemReadListener commonItemReadListener,
+			CommonItemWriteListener commonItemWriteListener) {
 		return stepBuilderFactory.get("step03_DB_to_CSV")
 			// チャンクサイズの設定
 			.<Person, Person> chunk(10)
@@ -54,6 +58,11 @@ public class Step03Configuration {
 			// データの出力（DTO ⇒ CSV）
 			// DTO「Person」をCSVに書き込む
 			.writer(step03ItemWriter)
+
+			// リスナーを登録
+			// （サンプルではエラー箇所を特定できるようにエラー発生時のItem（レコード）をログに出力）
+			.listener(commonItemReadListener)
+			.listener(commonItemWriteListener)
 
 			.build();
 	}

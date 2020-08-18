@@ -24,6 +24,9 @@ import org.springframework.core.task.TaskExecutor;
 
 import com.example.batchprocessing.dto.Person;
 import com.example.batchprocessing.item.processor.PersonItemProcessor;
+import com.example.batchprocessing.listener.CommonItemProcessListener;
+import com.example.batchprocessing.listener.CommonItemReadListener;
+import com.example.batchprocessing.listener.CommonItemWriteListener;
 
 @Configuration
 @EnableBatchProcessing
@@ -62,10 +65,11 @@ public class Step02Configuration {
 	            // 並行して実行するステップを登録
 	            .add(
 	            		// 名前に"J"が含まれるレコードを処理対象とするステップ
-	            		new FlowBuilder<SimpleFlow>("flow02_DB_to_DB_01").start(step02_DB_to_DB_01).build(),
+	            		new FlowBuilder<SimpleFlow>("flow02_DB_to_DB_01").start(step02_DB_to_DB_01).build()//,
 
 	            		// 名前に"Z"が含まれるレコードを処理対象とするステップ
-	            		new FlowBuilder<SimpleFlow>("flow02_DB_to_DB_02").start(step02_DB_to_DB_02).build())
+	            		//new FlowBuilder<SimpleFlow>("flow02_DB_to_DB_02").start(step02_DB_to_DB_02).build()
+	            	)
 
 	            .build();
 	}
@@ -74,10 +78,13 @@ public class Step02Configuration {
 	public Step step02_DB_to_DB_01(
 			ItemReader<Person> step02ItemReader01,
 			ItemProcessor<Person, Person> step02ItemProcessor,
-			ItemWriter<Person> step02ItemWriter) {
+			ItemWriter<Person> step02ItemWriter,
+			CommonItemReadListener commonItemReadListener,
+			CommonItemProcessListener commonItemProcessListener,
+			CommonItemWriteListener commonItemWriteListener) {
 		return stepBuilderFactory.get("step02_DB_to_DB_01")
 			// チャンクサイズの設定
-			.<Person, Person> chunk(3)
+			.<Person, Person> chunk(6)
 
 			// データの入力（DB ⇒ DTO）
 			// DBのPersonテーブルの各レコードをDTO「Person」に変換
@@ -92,6 +99,10 @@ public class Step02Configuration {
 			// DTO「Person」をDBのPersonテーブルに書き込む
 			.writer(step02ItemWriter)
 
+			.listener(commonItemReadListener)
+			.listener(commonItemProcessListener)
+			.listener(commonItemWriteListener)
+
 			.build();
 	}
 
@@ -99,10 +110,13 @@ public class Step02Configuration {
 	public Step step02_DB_to_DB_02(
 			ItemReader<Person> step02ItemReader02,
 			ItemProcessor<Person, Person> step02ItemProcessor,
-			ItemWriter<Person> step02ItemWriter) {
+			ItemWriter<Person> step02ItemWriter,
+			CommonItemReadListener commonItemReadListener,
+			CommonItemProcessListener commonItemProcessListener,
+			CommonItemWriteListener commonItemWriteListener) {
 		return stepBuilderFactory.get("step02_DB_to_DB_02")
 			// チャンクサイズの設定
-			.<Person, Person> chunk(3)
+			.<Person, Person> chunk(6)
 
 			// データの入力（DB ⇒ DTO）
 			// DBのPersonテーブルの各レコードをDTO「Person」に変換
@@ -117,6 +131,12 @@ public class Step02Configuration {
 			// DTO「Person」をDBのPersonテーブルに書き込む
 			.writer(step02ItemWriter)
 
+			// リスナーを登録
+			// （サンプルではエラー箇所を特定できるようにエラー発生時のItem（レコード）をログに出力）
+			.listener(commonItemReadListener)
+			.listener(commonItemProcessListener)
+			.listener(commonItemWriteListener)
+
 			.build();
 	}
 
@@ -124,8 +144,9 @@ public class Step02Configuration {
 	public MyBatisCursorItemReader<Person> step02ItemReader01() {
 		return new MyBatisCursorItemReaderBuilder<Person>()
 				.sqlSessionFactory(sqlSessionFactory)
-				.queryId("com.example.batchprocessing.mapper.PersonMapper.findPersonByName")
-				.parameterValues(new HashMap<String, Object>() {{put("name", "J");}})
+				.queryId("com.example.batchprocessing.mapper.PersonMapper.findAllPerson")
+				//.queryId("com.example.batchprocessing.mapper.PersonMapper.findPersonByName")
+				//.parameterValues(new HashMap<String, Object>() {{put("name", "J");}})
 				.build();
 	}
 

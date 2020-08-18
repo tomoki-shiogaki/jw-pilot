@@ -17,10 +17,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.task.SimpleAsyncTaskExecutor;
-import org.springframework.core.task.TaskExecutor;
 
 import com.example.batchprocessing.dto.Person;
+import com.example.batchprocessing.listener.CommonItemReadListener;
+import com.example.batchprocessing.listener.CommonItemWriteListener;
 
 @Configuration
 @EnableBatchProcessing
@@ -59,7 +59,9 @@ public class Step01Configuration {
 	@Bean
 	public Step step01_CSV_to_DB(
 			ItemReader<Person> step01ItemReader,
-			ItemWriter<Person> step01ItemWriter) {
+			ItemWriter<Person> step01ItemWriter,
+			CommonItemReadListener commonItemReadListener,
+			CommonItemWriteListener commonItemWriteListener) {
 
 		return stepBuilderFactory
 			// ステップ名？(ログ出力や実行情報などを識別するために使用される？)
@@ -85,8 +87,10 @@ public class Step01Configuration {
 			// （書き込みを行うクラス「MyBatisBatchItemWriter」はスレッドセーフのため同期は不要）
 			.writer(step01ItemWriter)
 
-			// 非同期用のTaskExecutorを設定（デフォルト：SyncTaskExecutor）
-			.taskExecutor(asyncTaskExecutor())
+			// リスナーを登録
+			// （サンプルではエラー箇所を特定できるようにエラー発生時のItem（レコード）をログに出力）
+			.listener(commonItemReadListener)
+			.listener(commonItemWriteListener)
 
 			// スレッドプールの最大数を設定（デフォルト：4）
 			// スレッドはチャンク単位で割り当てられる
@@ -125,11 +129,6 @@ public class Step01Configuration {
                 .sqlSessionFactory(sqlSessionFactory)
                 .statementId("com.example.batchprocessing.mapper.PersonMapper.insertPerson")
                 .build();
-	}
-
-	public TaskExecutor asyncTaskExecutor(){
-	    return new SimpleAsyncTaskExecutor("spring_batch");
-		//return new SyncTaskExecutor();
 	}
 
 }
