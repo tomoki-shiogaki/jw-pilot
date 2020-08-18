@@ -2,8 +2,8 @@ DROP TABLE people IF EXISTS;
 DROP TABLE person IF EXISTS;
 
 CREATE TABLE person  (
-    first_name VARCHAR(20),
-    last_name VARCHAR(20)
+    first_name VARCHAR(100),
+    last_name VARCHAR(100)
 );
 
 
