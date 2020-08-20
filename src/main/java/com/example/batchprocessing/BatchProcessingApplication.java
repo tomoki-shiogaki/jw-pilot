@@ -1,5 +1,6 @@
 package com.example.batchprocessing;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,10 +37,29 @@ public class BatchProcessingApplication {
     @Autowired
     Job importUserJob;
 
-    @RequestMapping("/job1")
-    String requestJob1() throws JobExecutionAlreadyRunningException, JobRestartException, JobInstanceAlreadyCompleteException, JobParametersInvalidException{
+    @RequestMapping("/job1_JobLauncher")
+    String requestJob_JobLauncher() throws JobExecutionAlreadyRunningException, JobRestartException, JobInstanceAlreadyCompleteException, JobParametersInvalidException{
         jobLauncher.run(importUserJob, createInitialJobParameterMap());
-        return "importUserJob!";
+        return "job1_JobLauncher!";
+    }
+
+    @RequestMapping("/job1_ProcessBuilder")
+    String requestJob_ProcessBuilder() {
+    	// Spring Bootで組み込みWebサーバの自動起動を無効化する方法
+    	// https://reasonable-code.com/spring-boot-web-server-disable/
+    	ProcessBuilder builder = new ProcessBuilder("C:\\pleiades\\java\\11\\bin\\java", "-Dfile.encoding=UTF-8", "-Dspring.datasource.initialization-mode=never", "-Dspring.main.web-application-type=none", "-Dspring.batch.job.enabled=true", "-Dspring.batch.job.names=importUserJob", "-jar", "target/batch-processing-0.0.1-SNAPSHOT.jar", "opdate=20200817", "run.id=1");
+
+    	// Javaから外部プログラム「7-zip」を呼び出す。
+    	// https://qiita.com/nogitsune413/items/48d69054b75ea9afbe5b
+    	builder.inheritIO();
+
+    	try {
+    		builder.start();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+        return "job1_ProcessBuilder!";
     }
 
     @RequestMapping("/jobExplorer")
@@ -51,6 +71,7 @@ public class BatchProcessingApplication {
         Map<String, JobParameter> m = new HashMap<>();
         //m.put("opdate", new JobParameter(System.currentTimeMillis()));
         m.put("opdate", new JobParameter("20200817"));
+        m.put("run.id", new JobParameter("1"));
         JobParameters p = new JobParameters(m);
         return p;
     }
