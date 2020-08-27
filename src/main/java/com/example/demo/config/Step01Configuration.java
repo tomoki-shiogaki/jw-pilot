@@ -78,6 +78,7 @@ public class Step01Configuration {
 
 				// 「,（カンマ）」区切り
 				.delimited()
+				.delimiter(",")
 
                 // DTOとのマッピング
                 // CSVデータの1列目がPerson.firstName、2列目がPerson.lastNameに格納される
