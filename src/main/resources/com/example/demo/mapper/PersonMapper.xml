@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.mapper.PersonMapper">
+
+    <resultMap type="com.example.demo.entity.Person" id="personResultMap">
+        <id property="firstName" column="first_name" />
+        <id property="lastName" column="last_name" />
+    </resultMap>
+
+    <select id="findAllPerson" resultMap="personResultMap">
+        SELECT
+            first_name,
+            last_name
+        FROM
+            person
+    </select>
+
+    <select id="findPersonByName" resultMap="personResultMap">
+        SELECT
+            first_name,
+            last_name
+        FROM
+            person
+        WHERE
+            first_name LIKE '%' || #{name} || '%'
+    </select>
+
+    <insert id="insertPerson">
+        INSERT INTO
+            person (first_name, last_name)
+        VALUES
+            (#{firstName}, #{lastName})
+    </insert>
+
+    <update id="savePerson">
+        UPDATE
+            person
+        SET
+            first_name = #{firstName}
+        WHERE
+            last_name = #{lastName}
+    </update>
+
+</mapper>
