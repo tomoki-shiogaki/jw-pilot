@@ -69,12 +69,30 @@ public class Step03Configuration {
 	@Bean
 	public ItemWriter<Person> step03ItemWriter(){
 	    return new FlatFileItemWriterBuilder<Person>()
-       			.name("itemWriter")
+	    		// ItemWriter名
+       			.name("step03ItemWriter")
+
+       			// ヘッダー（必要であれば）
+       			//.headerCallback(new FlatFileHeaderCallback() {
+				//	@Override
+				//	public void writeHeader(Writer writer) throws IOException {
+				//		writer.write("firstName,lastName");
+				//	}
+				//})
+
+       			// CSVファイル
        			.resource(new FileSystemResource("target/test-outputs/output.csv"))
+
+       			// 改行コード
        			.lineSeparator("\r\n")
+
+       			// 「,（カンマ）」区切り
        			.delimited()
 				.delimiter(",")
+
+				// 出力対象のフィールドと順番
 				.names(new String[] {"firstName", "lastName"})
+
        			.build();
 	}
 
