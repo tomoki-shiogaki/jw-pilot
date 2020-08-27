@@ -29,10 +29,6 @@ public class Step01Configuration {
 	/**
 	 * CSVをDBにインポートするためのサンプルコード（CSV ⇒ DB）
 	 *
-	 * 「マルチスレッドステップ」を利用してインポート処理を並列化。
-	 * ただし、CSVファイルの読み込みを行うクラス「FlatFileItemReader」がスレッドセーフではないためデータの入力（ItemReader）は同期させている。
-	 * そのため、並列化の効果が期待できるのはデータの加工（ItemProcessor）と出力（ItemWriter）のみ。
-	 *
 	 * 　　<参考サイト>
 	 *
 	 * 　　Spring Batchのアーキテクチャ > Spring Batchの基本構造
@@ -40,13 +36,6 @@ public class Step01Configuration {
 	 * 　　
 	 * 　　Spring Batch - リファレンスドキュメント > ItemReader および ItemWriter > FlatFileItemReader
 	 * 　　https://spring.pleiades.io/spring-batch/docs/current/reference/html/readersAndWriters.html#flatFileItemReader
-	 * 　　
-	 * 　　Spring Batch - リファレンスドキュメント > スケーリングと並列処理 > マルチスレッドステップ
-	 * 　　https://spring.pleiades.io/spring-batch/docs/current/reference/html/scalability.html#multithreadedStep
-	 * 　　
-	 * 　　spring-batchのTaskExecutorによるstepマルチスレッド化
-	 * 　　https://kagamihoge.hatenablog.com/entry/2020/01/07/110847
-	 *
 	 *
 	 * @return
 	 */
@@ -78,12 +67,6 @@ public class Step01Configuration {
 			// DTO「Person」をDBのPersonテーブルに書き込む
 			// （書き込みを行うクラス「MyBatisBatchItemWriter」はスレッドセーフのため同期は不要）
 			.writer(step01ItemWriter)
-
-			// スレッドプールの最大数を設定（デフォルト：4）
-			// スレッドはチャンク単位で割り当てられる
-			// （スレッドプールの最大数10、チャンクサイズ4、データ総件数10の場合、使用されるスレッドは3）
-			// （スレッドプールの最大数10、チャンクサイズ4、データ総件数60の場合、使用されるスレッドは10）
-			//.throttleLimit(10)
 
 			.build();
 	}
