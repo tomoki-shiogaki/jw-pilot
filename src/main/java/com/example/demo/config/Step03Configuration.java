@@ -70,7 +70,7 @@ public class Step03Configuration {
 	public ItemWriter<Person> step03ItemWriter(){
 	    return new FlatFileItemWriterBuilder<Person>()
        			.name("itemWriter")
-       			.resource(new FileSystemResource("target/test-outputs/output.txt"))
+       			.resource(new FileSystemResource("target/test-outputs/output.csv"))
        			.lineSeparator("\r\n")
        			.delimited()
 				.delimiter(",")
