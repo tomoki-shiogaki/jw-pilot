@@ -8,7 +8,8 @@ import org.springframework.batch.core.configuration.annotation.StepBuilderFactor
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
-import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
+import org.springframework.batch.item.file.mapping.FieldSetMapper;
+import org.springframework.batch.item.file.transform.FieldSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -45,7 +46,7 @@ public class Step01Configuration {
 			ItemWriter<Person> step01ItemWriter) {
 
 		return stepBuilderFactory
-			// ステップ名？(ログ出力や実行情報などを識別するために使用される？)
+			// ステップ名
 			.get("step01_CSV_to_DB")
 
 			// チャンクサイズの設定
@@ -54,18 +55,13 @@ public class Step01Configuration {
 			.<Person, Person> chunk(4)
 
 			// データの入力（CSV ⇒ DTO）
-			// CSVファイルの読み込みを行うクラス「FlatFileItemReader」を使用してCSVファイルの各レコードをDTO「Person」に変換
-			// 読み込み処理は同期化（SynchronizedItemStreamReaderでラップ）する
-			// （「FlatFileItemReader」がスレッドセーフではないため）
 			.reader(step01ItemReader)
 
 			// データの加工（あれば）
-			// データの加工を行う場合はスレッドセーフにする必要があるので注意。
 			//.processor(processor())
 
 			// データの出力（DTO ⇒ DB）
 			// DTO「Person」をDBのPersonテーブルに書き込む
-			// （書き込みを行うクラス「MyBatisBatchItemWriter」はスレッドセーフのため同期は不要）
 			.writer(step01ItemWriter)
 
 			.build();
@@ -74,13 +70,28 @@ public class Step01Configuration {
 	@Bean
 	public ItemReader<Person> step01ItemReader(){
 	    return new FlatFileItemReaderBuilder<Person>()
-				.name("personItemReader")
+	    		// ItemReader名
+				.name("step01ItemReader")
+
+				// CSVファイル
 				.resource(new ClassPathResource("sample-data.csv"))
+
+				// 「,（カンマ）」区切り
 				.delimited()
+
+                // DTOとのマッピング
+                // CSVデータの1列目がPerson.firstName、2列目がPerson.lastNameに格納される
 				.names(new String[]{"firstName", "lastName"})
-				.fieldSetMapper(new BeanWrapperFieldSetMapper<Person>() {{
-					setTargetType(Person.class);
-				}})
+				.fieldSetMapper(new FieldSetMapper<Person>() {
+				    public Person mapFieldSet(FieldSet fs) {
+				        if(fs == null){ return null; }
+				        Person person = new Person();
+				        person.setFirstName(fs.readString("firstName"));
+				        person.setLastName(fs.readString("lastName"));
+				        return person;
+				    }
+				})
+
 				.build();
 	}
 
