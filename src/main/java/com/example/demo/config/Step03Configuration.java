@@ -73,12 +73,7 @@ public class Step03Configuration {
        			.name("step03ItemWriter")
 
        			// ヘッダー（必要であれば）
-       			//.headerCallback(new FlatFileHeaderCallback() {
-				//	@Override
-				//	public void writeHeader(Writer writer) throws IOException {
-				//		writer.write("firstName,lastName");
-				//	}
-				//})
+       			//.headerCallback(writer -> writer.write("firstName,lastName"))
 
        			// CSVファイル
        			.resource(new FileSystemResource("target/test-outputs/output.csv"))
