@@ -8,12 +8,14 @@ import org.springframework.batch.core.configuration.annotation.StepBuilderFactor
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.file.builder.FlatFileItemWriterBuilder;
+import org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
 
 import com.example.demo.entity.Person;
+import com.example.demo.item.writer.CsvLineAggregator;
 
 @Configuration
 @EnableBatchProcessing
@@ -81,12 +83,19 @@ public class Step03Configuration {
        			// 改行コード
        			.lineSeparator("\r\n")
 
-       			// 「,（カンマ）」区切り
-       			.delimited()
-				.delimiter(",")
-
-				// 出力対象のフィールドと順番
-				.names(new String[] {"firstName", "lastName"})
+       			// SpringBatchで用意されているクラスだと囲み文字の設定が出来ないため、囲み文字に対応した自作クラス「CsvLineAggregator」を使用する。
+       			// 【Spring Batch】テーブルデータをCSVファイルへ出力する
+       			// https://qiita.com/teradatk/items/f860e582d5429dd81720
+       			.lineAggregator(new CsvLineAggregator<Person>() {
+       	            {
+       	                setFieldExtractor(new BeanWrapperFieldExtractor<Person>() {
+       	                    {
+       	                    	// 出力対象のフィールドと順番
+       	                        setNames(new String[] {"firstName", "lastName"});
+       	                    }
+       	                });
+       	            }
+       	        })
 
        			.build();
 	}
