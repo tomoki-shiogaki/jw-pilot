@@ -78,7 +78,7 @@ public class Step03Configuration {
        			//.headerCallback(writer -> writer.write("firstName,lastName"))
 
        			// CSVファイル
-       			.resource(new FileSystemResource("target/test-outputs/output.csv"))
+       			.resource(new FileSystemResource("bin/test-outputs/output.csv"))
 
        			// 改行コード
        			.lineSeparator("\r\n")
